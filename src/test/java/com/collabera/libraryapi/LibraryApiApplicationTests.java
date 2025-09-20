@@ -1,4 +1,4 @@
-package com.collabera.library_api;
+package com.collabera.libraryapi;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
