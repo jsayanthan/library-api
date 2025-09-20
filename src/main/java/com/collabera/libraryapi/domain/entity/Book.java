@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -39,5 +40,5 @@ public class Book {
     private boolean borrowed = false;
 
     @Column(name = "created_at", updatable = false, insertable = false)
-    private java.time.Instant createdAt;
+    private Instant createdAt;
 }
