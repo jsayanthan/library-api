@@ -3,6 +3,8 @@ name: CI
 on:
   push:
     branches: [ main ]
+    tags:
+      - 'v*.*.*'
   pull_request:
     branches: [ main ]
 
@@ -46,8 +48,22 @@ jobs:
           name: jacoco-xml
           path: target/site/jacoco/jacoco.xml
 
+      - name: Derive Version (if tag)
+        id: version
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            RAW_TAG="${GITHUB_REF_NAME}"   # e.g. v0.1.0
+            VERSION_NO_V="${RAW_TAG#v}"   # 0.1.0
+            MINOR="${VERSION_NO_V%.*}"    # 0.1
+            echo "is_tag=true" >> $GITHUB_OUTPUT
+            echo "version_full=${VERSION_NO_V}" >> $GITHUB_OUTPUT
+            echo "version_minor=${MINOR}" >> $GITHUB_OUTPUT
+          else
+            echo "is_tag=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Login to GHCR
-        if: ${{ github.ref == 'refs/heads/main' }}
+        if: ${{ github.ref == 'refs/heads/main' || steps.version.outputs.is_tag == 'true' }}
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -55,11 +71,41 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build & Push Image (GHCR)
-        if: ${{ github.ref == 'refs/heads/main' }}
+        if: ${{ github.ref == 'refs/heads/main' || steps.version.outputs.is_tag == 'true' }}
         env:
-          IMAGE: ghcr.io/${{ github.repository }}/library-api:sha-${{ github.sha }}
-          IMAGE_SHORT: ghcr.io/${{ github.repository }}/library-api:latest
+          REPO: ghcr.io/${{ github.repository_owner }}/library-api
         run: |
-          docker build -t "$IMAGE" -t "$IMAGE_SHORT" .
-          docker push "$IMAGE"
-          docker push "$IMAGE_SHORT"
+          set -e
+          SHA_TAG="$REPO:sha-${GITHUB_SHA}"
+          LATEST_TAG="$REPO:latest"
+          TAG_ARGS="-t $SHA_TAG -t $LATEST_TAG"
+          if [ "${{ steps.version.outputs.is_tag }}" = "true" ]; then
+            FULL="${{ steps.version.outputs.version_full }}"   # 0.1.0
+            MINOR="${{ steps.version.outputs.version_minor }}" # 0.1
+            TAG_ARGS="$TAG_ARGS -t $REPO:v$FULL -t $REPO:$FULL -t $REPO:$MINOR"
+          fi
+          echo "Building with tags: $TAG_ARGS"
+          docker build $TAG_ARGS .
+          docker push $SHA_TAG
+          docker push $LATEST_TAG
+          if [ "${{ steps.version.outputs.is_tag }}" = "true" ]; then
+            docker push $REPO:v$FULL
+            docker push $REPO:$FULL
+            docker push $REPO:$MINOR
+          fi
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' $SHA_TAG)
+          echo "Image digest: $DIGEST" >> $GITHUB_STEP_SUMMARY
+
+      - name: Verify POM version matches tag (optional gate)
+        if: ${{ steps.version.outputs.is_tag == 'true' }}
+        run: |
+          POM_VERSION=$(grep -m1 '<version>' pom.xml | sed -E 's/.*<version>([^<]+)<\/version>.*/\1/')
+          TAG_VERSION='${{ steps.version.outputs.version_full }}'
+          if echo "$POM_VERSION" | grep -q 'SNAPSHOT'; then
+            echo "POM still a SNAPSHOT ($POM_VERSION); consider releasing without SNAPSHOT before tagging." >> $GITHUB_STEP_SUMMARY
+          elif [ "$POM_VERSION" != "$TAG_VERSION" ]; then
+            echo "Mismatch: POM=$POM_VERSION Tag=$TAG_VERSION" >&2
+            exit 1
+          else
+            echo "POM version matches tag ($POM_VERSION)" >> $GITHUB_STEP_SUMMARY
+          fi
