@@ -89,15 +89,8 @@ public class GlobalExceptionHandler {
         return conflict(code, message, req);
     }
 
-    /**
-     * Suppress noisy 404 logs for static resource probes (e.g. Chrome DevTools /.well-known paths).
-     * We log at debug rather than error so genuine problems are more visible.
-     */
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiError> staticResourceNotFound(NoResourceFoundException ex, HttpServletRequest req) {
-        if (log.isDebugEnabled()) {
-            log.debug("Static resource not found: {}", req.getRequestURI());
-        }
         return notFound(NOT_FOUND, "Resource not found", req);
     }
 

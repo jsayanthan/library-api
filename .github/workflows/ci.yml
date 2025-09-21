@@ -32,21 +32,21 @@ jobs:
       - name: Coverage Summary
         if: always()
         run: |
-          if [ -f target/site/jacoco/jacoco.xml ]; then
-            INSTR=$(grep -o 'instructionCoverage>[^<]*' target/site/jacoco/jacoco.xml | head -1 | sed 's/.*instructionCoverage>//' || true)
-            BRANCH=$(grep -o 'branchCoverage>[^<]*' target/site/jacoco/jacoco.xml | head -1 | sed 's/.*branchCoverage>//' || true)
+          if [ -f target/site/jacoco/jacoco.html ]; then
+            INSTR=$(grep -o 'instructionCoverage>[^<]*' target/site/jacoco/jacoco.html | head -1 | sed 's/.*instructionCoverage>//' || true)
+            BRANCH=$(grep -o 'branchCoverage>[^<]*' target/site/jacoco/jacoco.html | head -1 | sed 's/.*branchCoverage>//' || true)
             echo "Instruction coverage: $INSTR" | tee -a $GITHUB_STEP_SUMMARY
             echo "Branch coverage: $BRANCH" | tee -a $GITHUB_STEP_SUMMARY
           else
-            echo "No jacoco.xml found" | tee -a $GITHUB_STEP_SUMMARY
+            echo "No jacoco.html found" | tee -a $GITHUB_STEP_SUMMARY
           fi
 
-      - name: Upload JaCoCo XML
+      - name: Upload JaCoCo HTML
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: jacoco-xml
-          path: target/site/jacoco/jacoco.xml
+          name: jacoco-html
+          path: target/site/jacoco/jacoco.html
 
       - name: Derive Version (if tag)
         id: version
