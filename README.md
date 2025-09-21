@@ -43,7 +43,7 @@ Stop Postgres: `docker stop library-pg`
 | Borrow a book | `POST /api/v1/loans` atomic borrow preventing double-loan |
 | Return a book | `POST /api/v1/loans/return` validates active loan |
 | Multiple copies same ISBN | Modeled via `BookCatalog (ISBN)` + many `Book` copies |
-| Data validation & errors | Bean Validation + custom uniqueness validators + structured `ApiError` |
+| Data validation & errors | Bean Validation (format + required) + custom unique email + service-level ISBN metadata consistency + structured `ApiError` |
 | Configurable environments | Profiles: `local` (H2), `dev` (PostgreSQL), `prod`, `test` |
 | Package manager | Maven with reproducible plugin configuration |
 | Database choice & rationale | PostgreSQL (robust constraints, future indexing) + H2 for fast local dev/tests |
@@ -95,7 +95,7 @@ Borrow flow performs guarded update to ensure only one active borrow per copy, c
 - Bean Validation annotations on DTOs (size, format, required fields).
 - Custom constraints:
   - `@UniqueEmail` – Pre-query to short-circuit duplicate borrower creation.
-  - `@UniqueIsbn` / metadata check – Ensures same ISBN always maps to identical title/author (consistency rule from requirements).
+  - ISBN consistency rule – First request establishes catalog (ISBN → title/author). Later copies with same ISBN must send identical title/author or a conflict error is returned.
 - Centralized error response format: `{ code, message, path }` enabling clients to react to semantic errors.
 
 ---
@@ -180,7 +180,8 @@ docker stop library-pg
 | Scenario | Status | Code |
 |----------|-------|------|
 | Duplicate email | 400 | EMAIL_ALREADY_EXISTS |
-| Duplicate ISBN (new copy metadata mismatch) | 400 | ISBN_METADATA_MISMATCH |
+| Second copy same ISBN (same metadata) | 201 | (Created) |
+| Same ISBN with different title/author | 409 | ISBN_METADATA_MISMATCH |
 | Book already borrowed | 409 | BOOK_ALREADY_BORROWED |
 | Borrower not found | 404 | BORROWER_NOT_FOUND |
 | Book not found | 404 | BOOK_NOT_FOUND |

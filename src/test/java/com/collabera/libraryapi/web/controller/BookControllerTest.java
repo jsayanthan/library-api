@@ -104,17 +104,19 @@ class BookControllerTest extends BaseMockMvcTest {
     }
 
     @Test
-    void create_400_isbnNotUnique() throws Exception {
+    @DisplayName("create_201_secondCopySameIsbn")
+    void create_201_secondCopySameIsbn() throws Exception {
+        // Simulate service creating another physical copy (different internal id)
+        UUID id = UUID.randomUUID();
         BookCreateRequest req = new BookCreateRequest("978-0-13-468599-1", "Effective Java", "Joshua Bloch");
-        // Simulate existing catalog entry so validator fails
-        given(bookCatalogRepository.existsByIsbnIgnoreCase("9780134685991")).willReturn(true);
+        BookResponse resp = new BookResponse(id, "9780134685991", req.title(), req.author(), false);
+        given(bookService.create(any())).willReturn(resp);
         MvcResult result = mockMvc.perform(post("/api/v1/books")
                         .contentType(json())
                         .content(toJson(req)))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isCreated())
                 .andReturn();
-        ApiError error = fromJson(result.getResponse().getContentAsString(), ApiError.class);
-        assertThat(error.message()).contains("isbn: ISBN must be unique");
-        verify(bookService, never()).create(any());
+        BookResponse actual = fromJson(result.getResponse().getContentAsString(), BookResponse.class);
+        assertThat(actual.isbn()).isEqualTo("9780134685991");
     }
 }

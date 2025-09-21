@@ -1,6 +1,5 @@
 package com.collabera.libraryapi.domain.dto.book;
 
-import com.collabera.libraryapi.validation.UniqueIsbn;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -14,7 +13,6 @@ public record BookCreateRequest(
                 regexp = "^(?:ISBN(?:-1[03])?:? )?(?=[-0-9Xx ]{10,17}$)(?:97[89][- ]?)?[0-9]{1,5}[- ]?[0-9]+[- ]?[0-9]+[- ]?[0-9Xx]$",
                 message = "Invalid ISBN-10/13 format"
         )
-        @UniqueIsbn
         String isbn,
 
         @Schema(description = "Title", example = "Effective Java")
