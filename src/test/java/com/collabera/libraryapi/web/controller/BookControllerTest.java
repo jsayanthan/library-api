@@ -38,8 +38,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class BookControllerTest extends BaseMockMvcTest {
     @MockBean
     private BookService bookService;
-    @MockBean
-    private BookCatalogRepository bookCatalogRepository; // for uniqueness validator
 
     private static Stream<Arguments> invalidCreatePayloads() {
         return Stream.of(
