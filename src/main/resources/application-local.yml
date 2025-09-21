@@ -13,3 +13,13 @@ spring:
 logging:
   level:
     com.collabera.libraryapi: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    health:
+      probes:
+        enabled: true
