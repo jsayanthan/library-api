@@ -5,7 +5,10 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.10</version>
+        <!-- Downgraded from 3.4.10 (Spring Framework 6.2.x) to 3.3.5 (Spring Framework 6.1.x)
+             because springdoc-openapi 2.6.0 is not yet compatible with Spring Framework 6.2.
+             Once springdoc releases a version supporting Spring 6.2, this can be bumped again. -->
+        <version>3.3.5</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 

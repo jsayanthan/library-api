@@ -1,9 +1,6 @@
 package com.collabera.libraryapi.domain.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -17,9 +14,11 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BookCatalog {
+public class BookCatalog extends Auditable {
 
+    // Natural primary key (ISBN) for catalog uniqueness
     @Id
+    @Column(length = 32)
     private String isbn;
 
     @Column(nullable = false)

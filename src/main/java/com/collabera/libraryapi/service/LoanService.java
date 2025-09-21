@@ -7,9 +7,7 @@ import com.collabera.libraryapi.domain.repository.LoanRepository;
 import com.collabera.libraryapi.domain.dto.loan.LoanCreateRequest;
 import com.collabera.libraryapi.domain.dto.loan.LoanResponse;
 import com.collabera.libraryapi.mapper.LoanMapper;
-import com.collabera.libraryapi.web.exception.BookAlreadyBorrowedException;
-import com.collabera.libraryapi.web.exception.BookNotFoundException;
-import com.collabera.libraryapi.web.exception.BorrowerNotFoundException;
+import com.collabera.libraryapi.web.exception.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,13 +27,14 @@ public class LoanService {
         var borrower = borrowers.findById(req.borrowerId())
                 .orElseThrow(() -> new BorrowerNotFoundException(req.borrowerId()));
         var book = books.getRequired(req.bookId());
-        if (book.isBorrowed() || loans.findByBookIdAndReturnedAtIsNull(req.bookId()).isPresent())
+        // Atomic update; succeed only if flipped false->true
+        if (books.markBorrowedIfAvailable(book.getId()) == 0) {
             throw new BookAlreadyBorrowedException(req.bookId());
+        }
+        book = books.findWithCatalogById(book.getId()).orElse(book);
 
         var loan = Loan.builder().book(book).borrower(borrower).borrowedAt(Instant.now()).build();
-        book.setBorrowed(true);
-        loans.save(loan);
-        return mapper.toResponse(loan);
+        return mapper.toResponse(loans.save(loan));
     }
 
     @Transactional
@@ -44,14 +43,15 @@ public class LoanService {
                 .orElseThrow(() -> new BorrowerNotFoundException(req.borrowerId()));
         books.findById(req.bookId())
                 .orElseThrow(() -> new BookNotFoundException(req.bookId()));
-
         var active = loans.findByBookIdAndReturnedAtIsNull(req.bookId())
-                .orElseThrow(() -> new BookAlreadyBorrowedException(req.bookId())); // reused to mean "no active loan"
-        if (!active.getBorrower().getId().equals(req.borrowerId()))
-            throw new IllegalStateException("This book is borrowed by a different borrower.");
-
+                .orElseThrow(() -> new ActiveLoanNotFoundException(req.bookId()));
+        if (!active.getBorrower().getId().equals(req.borrowerId())) {
+            throw new WrongBorrowerException(req.bookId());
+        }
         active.setReturnedAt(Instant.now());
-        active.getBook().setBorrowed(false);
+        loans.save(active);
+        books.markReturned(req.bookId());
+        active.setBook(books.findWithCatalogById(req.bookId()).orElse(active.getBook()));
         return mapper.toResponse(active);
     }
 }

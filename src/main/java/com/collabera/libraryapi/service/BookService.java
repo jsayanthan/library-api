@@ -22,9 +22,17 @@ public class BookService {
 
     @Transactional
     public BookResponse create(BookCreateRequest request) {
-        BookCatalog catalog = catalogs.findByIsbn(request.isbn())
-                .orElseGet(() -> catalogs.save(mapper.toCatalog(request)));
-        Book book = Book.builder().catalog(catalog).borrowed(false).build();
+        // Normalize ISBN by trimming and removing spaces/hyphens
+        String normalizedIsbn = request.isbn().replaceAll("[\\s-]", "").toUpperCase();
+        BookCatalog catalog = catalogs.findByIsbnIgnoreCase(normalizedIsbn)
+                .map(existing -> {
+                    if (!existing.getTitle().equals(request.title()) || !existing.getAuthor().equals(request.author())) {
+                        throw new com.collabera.libraryapi.web.exception.IsbnMetadataMismatchException(normalizedIsbn);
+                    }
+                    return existing;
+                })
+                .orElseGet(() -> catalogs.save(new BookCatalog(normalizedIsbn, request.title(), request.author())));
+        Book book = Book.builder().catalog(catalog).build();
         return mapper.toResponse(books.save(book));
     }
 

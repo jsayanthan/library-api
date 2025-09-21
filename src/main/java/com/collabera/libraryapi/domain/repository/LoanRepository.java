@@ -9,7 +9,6 @@ import java.util.UUID;
 import static org.springframework.data.jpa.repository.EntityGraph.EntityGraphType.LOAD;
 
 public interface LoanRepository extends JpaRepository<Loan, UUID> {
-
-    @EntityGraph(value = "Loan.full", type = LOAD)
+    @EntityGraph(type = LOAD, attributePaths = {"book", "book.catalog", "borrower"})
     Optional<Loan> findByBookIdAndReturnedAtIsNull(UUID bookId);
 }

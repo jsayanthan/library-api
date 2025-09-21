@@ -1,13 +1,6 @@
 package com.collabera.libraryapi.domain.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,17 +8,16 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 
-import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "book")
+@Table(name = "books")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Book {
+public class Book extends Auditable {
 
     @Id
     @GeneratedValue
@@ -33,12 +25,14 @@ public class Book {
     private UUID id;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "isbn", referencedColumnName = "isbn")
+    @JoinColumn(name = "catalog_isbn", referencedColumnName = "isbn", nullable = false)
     private BookCatalog catalog;
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean borrowed = false;
 
-    @Column(name = "created_at", updatable = false, insertable = false)
-    private Instant createdAt;
+    @Version
+    @Column(nullable = false)
+    private long version;
 }

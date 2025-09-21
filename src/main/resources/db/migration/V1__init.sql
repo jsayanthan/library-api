@@ -13,7 +13,6 @@ CREATE TABLE borrowers (
 
 -- ===== Book Catalog (one row per ISBN) =====
 CREATE TABLE book_catalog (
-    id         UUID         NOT NULL,
     isbn       VARCHAR(32)  NOT NULL,
     title      VARCHAR(255) NOT NULL,
     author     VARCHAR(255) NOT NULL,
@@ -21,8 +20,7 @@ CREATE TABLE book_catalog (
     updated_at TIMESTAMP    NOT NULL DEFAULT now(),
     created_by TEXT         NOT NULL DEFAULT 'system',
     updated_by TEXT         NOT NULL DEFAULT 'system',
-    CONSTRAINT pk_book_catalog PRIMARY KEY (id),
-    CONSTRAINT uk_book_catalog_isbn UNIQUE (isbn)
+    CONSTRAINT pk_book_catalog PRIMARY KEY (isbn)
 );
 
 CREATE INDEX idx_book_catalog_title  ON book_catalog(title);
@@ -31,7 +29,7 @@ CREATE INDEX idx_book_catalog_author ON book_catalog(author);
 -- ===== Books (physical copies) =====
 CREATE TABLE books (
     id         UUID      NOT NULL,
-    catalog_id UUID      NOT NULL,
+    catalog_isbn VARCHAR(32) NOT NULL,
     borrowed   BOOLEAN   NOT NULL DEFAULT FALSE,
     version    BIGINT    NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT now(),
@@ -40,13 +38,13 @@ CREATE TABLE books (
     updated_by TEXT      NOT NULL DEFAULT 'system',
     CONSTRAINT pk_books PRIMARY KEY (id),
     CONSTRAINT fk_books_catalog
-        FOREIGN KEY (catalog_id)
-        REFERENCES book_catalog(id)
+        FOREIGN KEY (catalog_isbn)
+        REFERENCES book_catalog(isbn)
         ON DELETE RESTRICT,
     CONSTRAINT ck_books_version_nonneg CHECK (version >= 0)
 );
 
-CREATE INDEX idx_books_catalog ON books(catalog_id);
+CREATE INDEX idx_books_catalog ON books(catalog_isbn);
 
 -- ===== Loans =====
 CREATE TABLE loans (

@@ -7,24 +7,20 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.*;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.lang.Nullable;
+import org.springframework.lang.NonNull;
+import com.collabera.libraryapi.web.exception.BookNotFoundException;
 
-import java.util.Optional;
 import java.util.UUID;
-
-import static org.springframework.data.jpa.repository.EntityGraph.EntityGraphType.LOAD;
+import java.util.Optional;
 
 public interface BookRepository extends JpaRepository<Book, UUID>, JpaSpecificationExecutor<Book> {
 
-    @Override
-    @EntityGraph(value = "Book.catalog", type = LOAD)
-    Optional<Book> findById(UUID id);
-
-    @Override
-    @EntityGraph(value = "Book.catalog", type = LOAD)
-    Page<Book> findAll(Specification<Book> spec, Pageable pageable);
-
     default Book getRequired(UUID id) {
-        return findById(id).orElseThrow(() -> new RuntimeException("Book not found: " + id));
+        return findById(id).orElseThrow(() -> new BookNotFoundException(id));
     }
 
     static Specification<Book> bySearch(String search) {
@@ -36,6 +32,22 @@ public interface BookRepository extends JpaRepository<Book, UUID>, JpaSpecificat
                 cb.like(cb.lower(root.get("catalog").get("isbn")),   like)
         );
     }
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update Book b set b.borrowed = true where b.id = :id and b.borrowed = false")
+    int markBorrowedIfAvailable(UUID id);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update Book b set b.borrowed = false where b.id = :id and b.borrowed = true")
+    int markReturned(UUID id);
+
+    @Override
+    @EntityGraph(attributePaths = "catalog")
+    @NonNull
+    Page<Book> findAll(@Nullable Specification<Book> spec, @NonNull Pageable pageable);
+
+    @EntityGraph(attributePaths = "catalog")
+    Optional<Book> findWithCatalogById(UUID id);
 
     @UtilityClass
     final class BookSpecs {

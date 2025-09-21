@@ -1,10 +1,6 @@
 package com.collabera.libraryapi.domain.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,13 +11,13 @@ import org.hibernate.annotations.UuidGenerator;
 import java.util.UUID;
 
 @Entity
-@Table(name = "borrower")
+@Table(name = "borrowers")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Borrower {
+public class Borrower extends Auditable {
 
     @Id
     @GeneratedValue
@@ -34,6 +30,5 @@ public class Borrower {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(name = "created_at", updatable = false, insertable = false)
-    private java.time.Instant createdAt;
+    // created_at handled by Auditable
 }

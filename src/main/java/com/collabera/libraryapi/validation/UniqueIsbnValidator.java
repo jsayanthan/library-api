@@ -15,6 +15,7 @@ public class UniqueIsbnValidator implements ConstraintValidator<UniqueIsbn, Stri
     @Override
     public boolean isValid(String isbn, ConstraintValidatorContext context) {
         if (isbn == null || isbn.isBlank()) return true;
-        return !bookCatalogRepository.existsByIsbnIgnoreCase(isbn);
+        String normalized = isbn.replaceAll("[\\s-]", "").toUpperCase();
+        return !bookCatalogRepository.existsByIsbnIgnoreCase(normalized);
     }
 }
