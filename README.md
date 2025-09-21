@@ -11,10 +11,19 @@ Or explicitly specify the profile (functionally the same, just makes it obvious 
 ```
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
+If you just cloned the repo, run a full build first so MapStruct generates mapper implementations (otherwise IDE might complain until the first compile):
+```
+./mvnw clean install
+```
+Windows PowerShell:
+```
+./mvnw.cmd clean install
+```
 Then open:
 * API docs (Swagger UI): http://localhost:8080/swagger-ui.html  (alt path: /swagger-ui/index.html)
 * OpenAPI JSON: http://localhost:8080/api-docs/library
 * H2 Console: http://localhost:8080/h2-console  (JDBC URL: `jdbc:h2:mem:library;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE`, user: `sa`, pass: `sa`)
+* (Optional) Set header `X-User: your.name` on requests to see auditing fields (`created_by` / `updated_by`) use that value; if omitted it falls back to `system`.
 
 To run with PostgreSQL instead:
 ```
@@ -23,15 +32,6 @@ PowerShell> $env:DB_HOST="localhost"; $env:DB_USER="library"; $env:DB_PASSWORD="
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 Stop Postgres: `docker stop library-pg`
-
-### Auditing Header (X-User)
-All write operations accept an optional `X-User` header used for auditing (stored in `created_by` / `updated_by`). If you omit it the value defaults to `system`. Example:
-```
-curl -X POST http://localhost:8080/api/v1/borrowers \
-  -H "Content-Type: application/json" \
-  -H "X-User: Sayanthan" \
-  -d '{"name":"Sayanthan","email":"sayanthan@example.com"}'
-```
 
 ---
 ## 1. Assessment Requirements Mapping
@@ -104,7 +104,7 @@ Borrow flow performs guarded update to ensure only one active borrow per copy, c
 |---------|-----------|-------|
 | Logging | `LoggingAspect` (AOP) | Method entry/exit timing for controllers/services (structured for extensibility). |
 | Page Size Guard | `PageSizeLimitAspect` | Enforces an upper bound to prevent accidental large queries. |
-| Auditing | `@EnableJpaAuditing` + AuditorAware | Populates created/updated timestamps & user (system placeholder). |
+| Auditing | `@EnableJpaAuditing` + AuditorAware | Uses `X-User` request header; defaults to `system` when header absent. |
 
 ---
 ## 7. OpenAPI / Swagger

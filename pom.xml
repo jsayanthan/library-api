@@ -188,15 +188,6 @@
                             </excludes>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>check</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                        <configuration>
-                        </configuration>
-                    </execution>
                 </executions>
             </plugin>
         </plugins>
