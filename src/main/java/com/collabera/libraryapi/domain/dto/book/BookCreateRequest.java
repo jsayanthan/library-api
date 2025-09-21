@@ -11,7 +11,7 @@ public record BookCreateRequest(
         @Schema(description = "ISBN-10 or ISBN-13", example = "9780134685991")
         @NotBlank(message = "ISBN cannot be blank")
         @Pattern(
-                regexp = "^(?:97[89])?\\d{9}[\\dX]$",
+                regexp = "^(?:ISBN(?:-1[03])?:? )?(?=[-0-9Xx ]{10,17}$)(?:97[89][- ]?)?[0-9]{1,5}[- ]?[0-9]+[- ]?[0-9]+[- ]?[0-9Xx]$",
                 message = "Invalid ISBN-10/13 format"
         )
         @UniqueIsbn

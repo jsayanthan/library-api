@@ -9,6 +9,7 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface BookMapper {
+
     BookCatalog toCatalog(BookCreateRequest request);
 
     @Mapping(target = "isbn", source = "catalog.isbn")

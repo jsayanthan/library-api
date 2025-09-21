@@ -15,6 +15,6 @@ public class UniqueIsbnValidator implements ConstraintValidator<UniqueIsbn, Stri
     @Override
     public boolean isValid(String isbn, ConstraintValidatorContext context) {
         if (isbn == null || isbn.isBlank()) return true;
-        return !bookCatalogRepository.existsByIsbn(isbn);
+        return !bookCatalogRepository.existsByIsbnIgnoreCase(isbn);
     }
 }

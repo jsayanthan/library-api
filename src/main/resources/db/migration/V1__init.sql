@@ -1,34 +1,72 @@
--- Create BookCatalog (unique ISBN registry)
+-- ===== Borrowers =====
+CREATE TABLE borrowers (
+    id         UUID         NOT NULL,
+    name       VARCHAR(255) NOT NULL,
+    email      VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP    NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP    NOT NULL DEFAULT now(),
+    created_by TEXT         NOT NULL DEFAULT 'system',
+    updated_by TEXT         NOT NULL DEFAULT 'system',
+    CONSTRAINT pk_borrowers PRIMARY KEY (id),
+    CONSTRAINT uk_borrowers_email UNIQUE (email)
+);
+
+-- ===== Book Catalog (one row per ISBN) =====
 CREATE TABLE book_catalog (
-    isbn VARCHAR(20) PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    author VARCHAR(255) NOT NULL
+    id         UUID         NOT NULL,
+    isbn       VARCHAR(32)  NOT NULL,
+    title      VARCHAR(255) NOT NULL,
+    author     VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP    NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP    NOT NULL DEFAULT now(),
+    created_by TEXT         NOT NULL DEFAULT 'system',
+    updated_by TEXT         NOT NULL DEFAULT 'system',
+    CONSTRAINT pk_book_catalog PRIMARY KEY (id),
+    CONSTRAINT uk_book_catalog_isbn UNIQUE (isbn)
 );
 
--- Create Book (copies of catalog entries)
-CREATE TABLE book (
-    id UUID PRIMARY KEY,
-    isbn VARCHAR(20) NOT NULL,
-    borrowed BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_book_catalog FOREIGN KEY (isbn) REFERENCES book_catalog(isbn)
+CREATE INDEX idx_book_catalog_title  ON book_catalog(title);
+CREATE INDEX idx_book_catalog_author ON book_catalog(author);
+
+-- ===== Books (physical copies) =====
+CREATE TABLE books (
+    id         UUID      NOT NULL,
+    catalog_id UUID      NOT NULL,
+    borrowed   BOOLEAN   NOT NULL DEFAULT FALSE,
+    version    BIGINT    NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP NOT NULL DEFAULT now(),
+    created_by TEXT      NOT NULL DEFAULT 'system',
+    updated_by TEXT      NOT NULL DEFAULT 'system',
+    CONSTRAINT pk_books PRIMARY KEY (id),
+    CONSTRAINT fk_books_catalog
+        FOREIGN KEY (catalog_id)
+        REFERENCES book_catalog(id)
+        ON DELETE RESTRICT,
+    CONSTRAINT ck_books_version_nonneg CHECK (version >= 0)
 );
 
--- Create Borrower
-CREATE TABLE borrower (
-    id UUID PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+CREATE INDEX idx_books_catalog ON books(catalog_id);
 
--- Create Loan
-CREATE TABLE loan (
-    id UUID PRIMARY KEY,
-    book_id UUID NOT NULL,
-    borrower_id UUID NOT NULL,
-    borrowed_at TIMESTAMP NOT NULL,
-    returned_at TIMESTAMP,
-    CONSTRAINT fk_loan_book FOREIGN KEY (book_id) REFERENCES book(id),
-    CONSTRAINT fk_loan_borrower FOREIGN KEY (borrower_id) REFERENCES borrower(id)
+-- ===== Loans =====
+CREATE TABLE loans (
+    id           UUID      NOT NULL,
+    book_id      UUID      NOT NULL,
+    borrower_id  UUID      NOT NULL,
+    borrowed_at  TIMESTAMP NOT NULL,
+    returned_at  TIMESTAMP,
+    created_at   TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at   TIMESTAMP NOT NULL DEFAULT now(),
+    created_by   TEXT      NOT NULL DEFAULT 'system',
+    updated_by   TEXT      NOT NULL DEFAULT 'system',
+    CONSTRAINT pk_loans PRIMARY KEY (id),
+    CONSTRAINT fk_loans_book
+        FOREIGN KEY (book_id)
+        REFERENCES books(id)
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_loans_borrower
+        FOREIGN KEY (borrower_id)
+        REFERENCES borrowers(id)
+        ON DELETE RESTRICT,
+    CONSTRAINT ck_loans_dates CHECK (returned_at IS NULL OR returned_at >= borrowed_at)
 );

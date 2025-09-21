@@ -2,13 +2,14 @@ package com.collabera.libraryapi.domain.repository;
 
 import com.collabera.libraryapi.domain.entity.Loan;
 import org.springframework.data.jpa.repository.*;
-import org.springframework.data.jpa.repository.EntityGraph.EntityGraphType;
 
 import java.util.Optional;
 import java.util.UUID;
 
-public interface LoanRepository extends JpaRepository<Loan, UUID>, JpaSpecificationExecutor<Loan> {
+import static org.springframework.data.jpa.repository.EntityGraph.EntityGraphType.LOAD;
 
-    @EntityGraph(attributePaths = { "book", "book.catalog", "borrower" }, type = EntityGraphType.LOAD)
-    Optional<Loan> findById(UUID id);
+public interface LoanRepository extends JpaRepository<Loan, UUID> {
+
+    @EntityGraph(value = "Loan.full", type = LOAD)
+    Optional<Loan> findByBookIdAndReturnedAtIsNull(UUID bookId);
 }
