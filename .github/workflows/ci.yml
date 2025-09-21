@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build-test:
     runs-on: ubuntu-latest
@@ -42,18 +46,20 @@ jobs:
           name: jacoco-xml
           path: target/site/jacoco/jacoco.xml
 
-      - name: Build Docker image
-        if: github.ref == 'refs/heads/main'
-        run: |
-          IMAGE=ghcr.io/${{ github.repository }}/library-api:sha-${{ github.sha }}
-          docker build -t $IMAGE .
+      - name: Login to GHCR
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Login & Push (if secrets provided)
-        if: github.ref == 'refs/heads/main' && secrets.CR_USERNAME != '' && secrets.CR_PASSWORD != ''
+      - name: Build & Push Image (GHCR)
+        if: ${{ github.ref == 'refs/heads/main' }}
         env:
-          CR_USERNAME: ${{ secrets.CR_USERNAME }}
-          CR_PASSWORD: ${{ secrets.CR_PASSWORD }}
+          IMAGE: ghcr.io/${{ github.repository }}/library-api:sha-${{ github.sha }}
+          IMAGE_SHORT: ghcr.io/${{ github.repository }}/library-api:latest
         run: |
-          echo "$CR_PASSWORD" | docker login ghcr.io -u "$CR_USERNAME" --password-stdin
-          IMAGE=ghcr.io/${{ github.repository }}/library-api:sha-${{ github.sha }}
-          docker push $IMAGE
+          docker build -t "$IMAGE" -t "$IMAGE_SHORT" .
+          docker push "$IMAGE"
+          docker push "$IMAGE_SHORT"
