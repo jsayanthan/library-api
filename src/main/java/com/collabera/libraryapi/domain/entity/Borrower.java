@@ -29,6 +29,4 @@ public class Borrower extends Auditable {
 
     @Column(nullable = false, unique = true)
     private String email;
-
-    // created_at handled by Auditable
 }

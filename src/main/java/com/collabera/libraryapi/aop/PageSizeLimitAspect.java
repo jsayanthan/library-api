@@ -1,5 +1,6 @@
-package com.collabera.libraryapi.aop.annotations;
+package com.collabera.libraryapi.aop;
 
+import com.collabera.libraryapi.aop.annotations.PageSizeLimit;
 import com.collabera.libraryapi.core.constants.PaginationConstants;
 import com.collabera.libraryapi.web.exception.PageSizeLimitExceededException;
 import jakarta.servlet.http.HttpServletRequest;

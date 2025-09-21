@@ -3,14 +3,3 @@ spring:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:library}
     username: ${DB_USER:library}
     password: ${DB_PASSWORD:library}
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    open-in-view: false
-  flyway:
-    enabled: true
-
-logging:
-  level:
-    root: INFO
-    com.collabera.libraryapi: INFO

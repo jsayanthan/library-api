@@ -16,7 +16,6 @@ import lombok.Setter;
 @AllArgsConstructor
 public class BookCatalog extends Auditable {
 
-    // Natural primary key (ISBN) for catalog uniqueness
     @Id
     @Column(length = 32)
     private String isbn;
