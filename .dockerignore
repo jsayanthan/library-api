@@ -1,0 +1,13 @@
+# Build context exclusions
+.git
+.github
+.idea
+.vscode
+*.iml
+target/
+Dockerfile
+README.md
+HELP.md
+**/node_modules
+**/.DS_Store
+.mvn/
